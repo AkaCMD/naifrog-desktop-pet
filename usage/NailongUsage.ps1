@@ -49,7 +49,6 @@ if (Test-Path -LiteralPath $statePath) {
         ShowInTaskbar="False" ShowActivated="False" Title="奶蛙用量入口">
   <Border Background="#FFF7CC" BorderBrush="#E7B733" BorderThickness="1" CornerRadius="16">
     <Grid Margin="3,2">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="64"/><ColumnDefinition Width="4"/><ColumnDefinition Width="26"/></Grid.ColumnDefinitions>
     <Button Name="UsageButton" Content="用量" Background="#FFF7CC" BorderThickness="0"
             Foreground="#604514" FontSize="12" FontFamily="Microsoft YaHei UI"
             HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FocusVisualStyle="{x:Null}"
@@ -58,16 +57,6 @@ if (Test-Path -LiteralPath $statePath) {
       <Button.Resources>
         <SolidColorBrush x:Key="HoverBackground" Color="#FFED99"/>
         <SolidColorBrush x:Key="PressedBackground" Color="#FFE277"/>
-      </Button.Resources>
-    </Button>
-    <Button Name="ActivityButton" Grid.Column="2" Content="≡" Foreground="#EAF4FC" FontSize="12"
-            FontFamily="Microsoft YaHei UI" Background="#315A77" BorderBrush="#6689A4" BorderThickness="1"
-            HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FocusVisualStyle="{x:Null}"
-            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-            Cursor="Hand" ToolTip="查看桌宠活动" AutomationProperties.Name="查看桌宠活动">
-      <Button.Resources>
-        <SolidColorBrush x:Key="HoverBackground" Color="#467899"/>
-        <SolidColorBrush x:Key="PressedBackground" Color="#25465F"/>
       </Button.Resources>
     </Button>
     </Grid>
@@ -143,10 +132,8 @@ function Read-NailongWindow([xml]$Xaml) {
 }
 $script:entryWindow = Read-NailongWindow $buttonXaml
 $script:bubbleWindow = Read-NailongWindow $bubbleXaml
-$script:activityButton = $entryWindow.FindName('ActivityButton')
 $roundedButtonTemplate = Read-NailongWindow $roundedButtonTemplateXaml
 $entryWindow.FindName('UsageButton').Template = $roundedButtonTemplate
-$activityButton.Template = $roundedButtonTemplate
 $script:controls = @{}
 foreach ($name in @('CloseButton', 'AlertText', 'UsedText', 'AvailableText', 'RemainingBar',
     'PercentText', 'ReserveText', 'ReserveDetailText', 'RefreshButton', 'StatusText')) {
@@ -162,8 +149,6 @@ $script:footButtonElement = $null
 $script:locator = $null
 $script:locatorHandle = $null
 $script:anchor = $null
-$script:activityWorker = $null
-$script:activityHandle = $null
 $script:petVisible = $false
 $script:nextLocate = [DateTime]::MinValue
 $script:nextRefresh = [DateTime]::MinValue
@@ -363,15 +348,12 @@ function Set-NailongPosition($Rect) {
     $right = $area.Right * $scaleX; $bottom = $area.Bottom * $scaleY
     $petLeft = $Rect.Left * $scaleX; $petTop = $Rect.Top * $scaleY
     $petRight = $Rect.Right * $scaleX
-    # One centered opaque row hosts usage on the left and native activity on the right.
-    # Both controls move together and the continuous background covers the old badge.
+    # Center the single usage control beneath the pet; keep the opaque background
+    # wide enough to cover the native activity badge.
     $buttonLeft = (($petLeft + $petRight) / 2) - $entryWindow.Width / 2
     $buttonTop = $Rect.Bottom * $scaleY + 4
     if ($null -ne $script:anchor) {
-                $buttonTop = ($Rect.Top + $script:anchor.FootY) * $scaleY - $entryWindow.Height / 2
-                $activityName = $script:anchor.ActivityName
-                $activityButton.Content = if ($activityName -match '(\d+)\s*(?:项|activities|activity)') { $Matches[1] } else { '≡' }
-                $activityButton.ToolTip = $activityName
+        $buttonTop = ($Rect.Top + $script:anchor.FootY) * $scaleY - $entryWindow.Height / 2
     }
     $entryWindow.Left = [Math]::Max($left, [Math]::Min($right - $entryWindow.Width, $buttonLeft))
     $entryWindow.Top = [Math]::Max($top, [Math]::Min($bottom - $entryWindow.Height, $buttonTop))
@@ -411,7 +393,6 @@ function Update-NailongPet {
     if ($script:petVisible) {
         if (-not $entryWindow.IsVisible) { $entryWindow.Show() }
         Set-NailongPosition $rect
-        $activityButton.IsEnabled = $null -ne $script:footButtonElement
     }
     else {
         $entryWindow.Hide()
@@ -461,19 +442,6 @@ $entryWindow.FindName('UsageButton').Add_Click({
     $bubbleWindow.Show()
     Start-NailongRefresh
 })
-$activityButton.Add_Click({
-    try {
-        if ($null -ne $script:footButtonElement) {
-            if ($null -ne $script:activityWorker) { return }
-            $script:activityWorker = [PowerShell]::Create()
-            $null = $script:activityWorker.AddScript('param($element) try { $element.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke() } catch {}').AddArgument($script:footButtonElement)
-            $script:activityHandle = $script:activityWorker.BeginInvoke()
-        }
-    } catch {
-        $script:footButtonElement = $null
-        $script:nextLocate = [DateTime]::MinValue
-    }
-})
 $controls.RefreshButton.Add_Click({ Start-NailongRefresh })
 $controls.CloseButton.Add_Click({
     $script:manualOpen = $false
@@ -488,10 +456,6 @@ $timer.Interval = [TimeSpan]::FromMilliseconds(33)
 $timer.Add_Tick({
     try {
         $now = [DateTime]::UtcNow
-        if ($null -ne $script:activityWorker -and $script:activityHandle.IsCompleted) {
-            try { $null = $script:activityWorker.EndInvoke($script:activityHandle) } catch {}
-            $script:activityWorker.Dispose(); $script:activityWorker = $null
-        }
         Complete-NailongRefresh
         if ($now -ge $script:nextRefresh -and $null -eq $script:worker) { Start-NailongRefresh }
         Update-NailongPet
@@ -542,9 +506,6 @@ try {
     }
     if ($null -ne $script:locator) {
         $script:locator.Stop(); $script:locator.Dispose()
-    }
-    if ($null -ne $script:activityWorker) {
-        $script:activityWorker.Stop(); $script:activityWorker.Dispose()
     }
     $bubbleWindow.Close()
     $entryWindow.Close()
