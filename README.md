@@ -4,6 +4,16 @@
 
 ![奶蛙预览](docs/pet-preview.png)
 
+## 一句话接入（通用版，含用量和音效）
+
+将下面这句话复制给本机 Codex，让它按仓库说明完成安装和配置：
+
+```text
+请从 https://github.com/AkaCMD/naifrog-desktop-pet 下载并安装奶蛙 Codex 桌宠，阅读 README.md、usage/README.md 和 sound/README.md，使用 Install.ps1 -WithUsage 安装用量组件，根据我提供的用量服务 API 文档或查询方式、所需凭据和计量单位创建 Provider.Local.ps1 并配置真实用量、气泡及低额度提醒，同时使用我提供的有权使用的本地 WAV 配置任务完成音效；缺少接入资料或 WAV 路径时向我询问，凭据只在本机安全输入和保存，不写入源码或提交 Git，不用示例数据冒充真实用量，修改 config.toml 前先备份并保留原 notify，最后验证用量刷新和音效播放，并告诉我如何重启 Codex、选择奶蛙和卸载。
+```
+
+适用于 Windows 10/11；音效需要 Python 3.11+ 及支持 `notify` 的 Codex。请准备用量服务的 API 文档或查询方式、计量单位，以及有权使用的本地 WAV 路径。公开仓库不包含服务凭据或 WAV，提示词会引导 Codex 在本机补齐配置。
+
 ## 下载与安装
 
 到 [Releases](https://github.com/AkaCMD/naifrog-desktop-pet/releases/latest) 下载 `naifrog-desktop-pet-v1.0.0.zip`，解压后进入文件夹。
