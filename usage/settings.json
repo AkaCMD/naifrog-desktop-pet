@@ -1,0 +1,6 @@
+{
+  "providerScript": "",
+  "unit": "额度",
+  "refreshSeconds": 60,
+  "autoHideSeconds": 15
+}

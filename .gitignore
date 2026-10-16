@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.log
+*.dpapi
+*.wav
+*.mp3
+usage/Provider.Local.ps1
+usage/local*.json
+sound/local.json
+alert-state.json*
+diagnostics.json
+last-completion.json
+forward-notify.json
+.env*
+*.zip
