@@ -44,13 +44,13 @@ if (Test-Path -LiteralPath $statePath) {
 
 [xml]$buttonXaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        Width="56" Height="28" WindowStyle="None" ResizeMode="NoResize"
+        Width="28" Height="28" WindowStyle="None" ResizeMode="NoResize"
         AllowsTransparency="True" Background="Transparent" Topmost="True"
         ShowInTaskbar="False" ShowActivated="False" Title="奶蛙用量入口">
   <Border Background="#FFF7CC" BorderBrush="#E7B733" BorderThickness="1" CornerRadius="16">
-    <Grid Margin="3,2">
+    <Grid Margin="1">
     <Button Name="UsageButton" Content="用量" Background="#FFF7CC" BorderThickness="0"
-            Foreground="#604514" FontSize="12" FontFamily="Microsoft YaHei UI"
+            Foreground="#604514" FontSize="10" FontFamily="Microsoft YaHei UI"
             HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FocusVisualStyle="{x:Null}"
             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
             Cursor="Hand" ToolTip="点击查看用量，再点一次收起" AutomationProperties.Name="查看奶蛙用量">
@@ -352,16 +352,11 @@ function Set-NailongPosition($Rect) {
     $right = $area.Right * $scaleX; $bottom = $area.Bottom * $scaleY
     $petLeft = $Rect.Left * $scaleX; $petTop = $Rect.Top * $scaleY
     $petRight = $Rect.Right * $scaleX
-    # Keep the compact usage control below activity, leaving its click area free.
-    $buttonLeft = (($petLeft + $petRight) / 2) - $entryWindow.Width / 2
-    $buttonTop = $Rect.Bottom * $scaleY + 36
-    if ($null -ne $script:anchor) {
-        $buttonLeft = ($Rect.Left + $script:anchor.FootCenterX) * $scaleX - $entryWindow.Width / 2
-        $buttonTop = ($Rect.Top + $script:anchor.FootBottom) * $scaleY + 4
-    }
+    # Float the usage circle at the pet's upper-right corner.
+    $buttonLeft = $petRight - 8
+    $buttonTop = $petTop + 4
     $entryWindow.Left = [Math]::Max($left, [Math]::Min($right - $entryWindow.Width, $buttonLeft))
-    $entryBottom = $screen.Bounds.Bottom * $scaleY
-    $entryWindow.Top = [Math]::Max($top, [Math]::Min($entryBottom - $entryWindow.Height, $buttonTop))
+    $entryWindow.Top = [Math]::Max($top, [Math]::Min($bottom - $entryWindow.Height, $buttonTop))
     # Dragging can bring the native pet's topmost window ahead of ours. Restore the
     # overlay order without activating it or stealing keyboard focus.
     [NailongOverlayLayer]::RaiseWithoutActivation([Windows.Interop.WindowInteropHelper]::new($entryWindow).Handle)
