@@ -44,7 +44,7 @@ if (Test-Path -LiteralPath $statePath) {
 
 [xml]$buttonXaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        Width="100" Height="32" WindowStyle="None" ResizeMode="NoResize"
+        Width="56" Height="28" WindowStyle="None" ResizeMode="NoResize"
         AllowsTransparency="True" Background="Transparent" Topmost="True"
         ShowInTaskbar="False" ShowActivated="False" Title="奶蛙用量入口">
   <Border Background="#FFF7CC" BorderBrush="#E7B733" BorderThickness="1" CornerRadius="16">
@@ -279,6 +279,8 @@ function Find-NailongPet {
                         X = $rect.Left - $hostRect.Left; Y = $rect.Top - $hostRect.Top
                         Width = $rect.Width; Height = $rect.Height
                         FootY = if ($null -ne $foot) { $foot.Top - $rect.Top + [Math]::Max($foot.Width, $foot.Height) / 2 } else { $rect.Height + 16 }
+                        FootCenterX = if ($null -ne $foot) { $foot.Left - $rect.Left + $foot.Width / 2 } else { $rect.Width / 2 }
+                        FootBottom = if ($null -ne $foot) { $foot.Bottom - $rect.Top } else { $rect.Height + 32 }
                         ActivityName = if ($null -ne $script:footButtonElement) { $script:footButtonElement.Current.Name } else { '' }
                         ActivityElement = $script:footButtonElement
                     }
@@ -316,6 +318,8 @@ function Update-NailongLocator {
                     if ($null -ne $cached.ActivityElement) {
                         $foot = $cached.ActivityElement.Current.BoundingRectangle
                         $cached.FootY = $foot.Top - $r.Top + [Math]::Max($foot.Width, $foot.Height) / 2
+                        $cached.FootCenterX = $foot.Left - $r.Left + $foot.Width / 2
+                        $cached.FootBottom = $foot.Bottom - $r.Top
                         $cached.ActivityName = $cached.ActivityElement.Current.Name
                     }
                     return $cached
@@ -348,15 +352,16 @@ function Set-NailongPosition($Rect) {
     $right = $area.Right * $scaleX; $bottom = $area.Bottom * $scaleY
     $petLeft = $Rect.Left * $scaleX; $petTop = $Rect.Top * $scaleY
     $petRight = $Rect.Right * $scaleX
-    # Center the single usage control beneath the pet; keep the opaque background
-    # wide enough to cover the native activity badge.
+    # Keep the compact usage control below activity, leaving its click area free.
     $buttonLeft = (($petLeft + $petRight) / 2) - $entryWindow.Width / 2
-    $buttonTop = $Rect.Bottom * $scaleY + 4
+    $buttonTop = $Rect.Bottom * $scaleY + 36
     if ($null -ne $script:anchor) {
-        $buttonTop = ($Rect.Top + $script:anchor.FootY) * $scaleY - $entryWindow.Height / 2
+        $buttonLeft = ($Rect.Left + $script:anchor.FootCenterX) * $scaleX - $entryWindow.Width / 2
+        $buttonTop = ($Rect.Top + $script:anchor.FootBottom) * $scaleY + 4
     }
     $entryWindow.Left = [Math]::Max($left, [Math]::Min($right - $entryWindow.Width, $buttonLeft))
-    $entryWindow.Top = [Math]::Max($top, [Math]::Min($bottom - $entryWindow.Height, $buttonTop))
+    $entryBottom = $screen.Bounds.Bottom * $scaleY
+    $entryWindow.Top = [Math]::Max($top, [Math]::Min($entryBottom - $entryWindow.Height, $buttonTop))
     # Dragging can bring the native pet's topmost window ahead of ours. Restore the
     # overlay order without activating it or stealing keyboard focus.
     [NailongOverlayLayer]::RaiseWithoutActivation([Windows.Interop.WindowInteropHelper]::new($entryWindow).Handle)

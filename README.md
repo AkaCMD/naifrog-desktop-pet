@@ -16,7 +16,7 @@
 
 ## 下载与安装
 
-到 [Releases](https://github.com/AkaCMD/naifrog-desktop-pet/releases/latest) 下载 `naifrog-desktop-pet-v1.0.1.zip`，解压后进入文件夹。
+到 [Releases](https://github.com/AkaCMD/naifrog-desktop-pet/releases/latest) 下载 `naifrog-desktop-pet-v1.0.2.zip`，解压后进入文件夹。
 
 要求：支持自定义桌宠的 Codex 桌面版。安装脚本及用量组件要求 Windows 10/11、Windows PowerShell 5.1；自备音效额外需要 Python 3.11+。
 
@@ -68,3 +68,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\usage\Test.Regression.
 ## v1.0.1 更新
 
 删除脚边右侧蓝色活动按钮，仅保留居中的“用量”按钮。用量气泡和额度提醒继续通过该按钮使用。已安装用户重新运行原安装命令即可更新。
+
+## v1.0.2 更新
+
+用量按钮改为 56×28 的圆角胶囊，放在原生活动按钮下方，按活动按钮居中对齐并保留 4 像素间距（100% 缩放）。活动列表展开时可以与用量窗口部分重叠，活动入口仍可直接点击。已安装用户重新运行原安装命令即可更新。
